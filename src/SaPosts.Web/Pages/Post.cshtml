@@ -13,6 +13,11 @@
             <time datetime="@SiteTime.ToIso(publishedAt)">@SiteTime.FormatDate(publishedAt, post.Language)</time>
         </p>
     </header>
+    @if (post.CoverMedia is { } cover)
+    {
+        @* The likely LCP element: fetched with high priority, never lazily. *@
+        <figure class="post__cover">@Html.Raw(MediaMarkup.Image(cover, cover.AltText, MediaMarkup.FrameSizes, ImageLoading.Priority))</figure>
+    }
     @* Sanitized when the post was saved (MarkdownRenderer). *@
     <div class="prose">@Html.Raw(post.BodyHtml)</div>
 </article>

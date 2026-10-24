@@ -31,6 +31,9 @@ public sealed class PostForm
     [Display(Name = "Date de publication")]
     public DateTime? PublishedAt { get; set; }
 
+    [Display(Name = "Image de couverture")]
+    public Guid? CoverMediaId { get; set; }
+
     [Display(Name = "Contenu (Markdown)")]
     [StringLength(200_000, ErrorMessage = "Le contenu ne doit pas dépasser 200 000 caractères.")]
     public string? BodyMarkdown { get; set; }
@@ -43,9 +46,10 @@ public sealed class PostForm
         Language = post.Language,
         Status = post.Status,
         PublishedAt = post.PublishedAt is { } publishedAt ? toLocal(publishedAt) : null,
+        CoverMediaId = post.CoverMediaId,
         BodyMarkdown = post.BodyMarkdown,
     };
 
     public PostChanges ToChanges(DateTime? publishedAtUtc) =>
-        new(Title, Slug, Excerpt, Language, Status, publishedAtUtc, BodyMarkdown ?? string.Empty);
+        new(Title, Slug, Excerpt, Language, Status, publishedAtUtc, CoverMediaId, BodyMarkdown ?? string.Empty);
 }

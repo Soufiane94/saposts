@@ -1,0 +1,65 @@
+@page
+@model SaPosts.Web.Pages.Admin.Media.IndexModel
+@inject SiteTime SiteTime
+@{
+    ViewData["Title"] = "Médiathèque";
+}
+<div class="admin-frame">
+    <div class="admin-toolbar">
+        <h1 class="admin-title">Médiathèque</h1>
+    </div>
+
+    @if (Model.Deleted)
+    {
+        <p class="form-notice" role="status">Média supprimé.</p>
+    }
+
+    <div class="dropzone" data-dropzone>
+        <p class="dropzone__text">Déposez des images ou des vidéos ici, ou</p>
+        <label class="button dropzone__choose">
+            Choisir des fichiers
+            <input class="visually-hidden" type="file" multiple accept="image/jpeg,image/png,image/webp,image/avif,image/gif,video/mp4,video/webm" data-dropzone-input />
+        </label>
+        <p class="field-hint">Images JPEG, PNG, WebP, AVIF ou GIF ; vidéos MP4 (H.264/AAC) ou WebM. Les métadonnées (EXIF, GPS) sont supprimées.</p>
+    </div>
+    <ul class="upload-list" role="list" aria-live="polite" data-upload-list></ul>
+    <partial name="_MediaUpload" />
+
+    @if (Model.Items.Count == 0)
+    {
+        <p class="empty-state">La médiathèque est vide.</p>
+    }
+    else
+    {
+        <ul class="media-grid" role="list">
+            @foreach (var item in Model.Items)
+            {
+                var thumbnail = item.Kind == MediaKind.Image ? item : item.Poster;
+                <li class="media-card">
+                    <a class="media-card__link" asp-page="/Admin/Media/Edit" asp-route-id="@item.Id">
+                        <span class="media-card__thumb">
+                            @if (thumbnail is not null)
+                            {
+                                @Html.Raw(MediaMarkup.Image(thumbnail, string.Empty, MediaMarkup.AdminCardSizes, ImageLoading.Lazy))
+                            }
+                            else
+                            {
+                                <span class="media-card__placeholder">Vidéo</span>
+                            }
+                        </span>
+                        <span class="media-card__name">@item.OriginalFileName</span>
+                    </a>
+                    <span class="media-card__meta">
+                        @(item.Kind == MediaKind.Image ? "Image" : "Vidéo")@(item.Width is { } w && item.Height is { } h ? $" · {w} × {h}" : "") · @MediaUploader.FormatSize(item.SizeBytes)
+                    </span>
+                    <span class="media-card__meta">@SiteTime.FormatDateTime(item.UploadedAt)</span>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/media-upload.js" asp-append-version="true" defer></script>
+    <script src="~/js/media-library.js" asp-append-version="true" defer></script>
+}

@@ -7,6 +7,7 @@ using SaPosts.Web.Auth;
 using SaPosts.Web.Data;
 using SaPosts.Web.Infrastructure;
 using SaPosts.Web.Infrastructure.Security;
+using SaPosts.Web.Media;
 using SaPosts.Web.Posts;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +23,7 @@ builder.Services
 builder.Services.AddBlogData();
 builder.Services.AddAdminAuthentication();
 builder.Services.AddPosts();
+builder.Services.AddMedia();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<SiteTime>();
 
@@ -60,6 +62,7 @@ app.UseAuthorization();
 
 app.MapStaticAssets();
 app.MapHealthChecks("/healthz");
+app.MapMedia();
 app.MapRazorPages().WithStaticAssets();
 
 await app.RunAsync();

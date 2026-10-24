@@ -11,6 +11,8 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
+    <PackageReference Include="NetVips" />
+    <PackageReference Include="NetVips.Native" />
   </ItemGroup>
 
   <ItemGroup>

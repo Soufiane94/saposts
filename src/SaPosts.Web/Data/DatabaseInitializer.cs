@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 using SaPosts.Web.Auth;
+using SaPosts.Web.Media;
 using SaPosts.Web.Posts;
 
 namespace SaPosts.Web.Data;
@@ -15,6 +16,11 @@ public static class DatabaseInitializer
         var storage = app.Services.GetRequiredService<IOptions<StorageOptions>>().Value;
         Directory.CreateDirectory(storage.DataPath);
         Directory.CreateDirectory(storage.KeysDirectory);
+        Directory.CreateDirectory(storage.MediaPath);
+
+        // Uploads interrupted by a crash or a restart leave staging files behind.
+        var now = app.Services.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime;
+        app.Services.GetRequiredService<MediaStaging>().DeleteOlderThan(now.AddHours(-1));
 
         await using var scope = app.Services.CreateAsyncScope();
         var services = scope.ServiceProvider;

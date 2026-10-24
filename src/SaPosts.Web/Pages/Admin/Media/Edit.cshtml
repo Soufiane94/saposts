@@ -1,0 +1,102 @@
+@page "{id:guid}"
+@model SaPosts.Web.Pages.Admin.Media.EditModel
+@inject SiteTime SiteTime
+@functions {
+    private string? Invalid(string field) =>
+        ViewData.ModelState.TryGetValue($"Form.{field}", out var entry) && entry.Errors.Count > 0 ? "true" : null;
+}
+@{
+    var item = Model.Item;
+    var isImage = item.Kind == MediaKind.Image;
+    ViewData["Title"] = item.OriginalFileName;
+}
+<div class="admin-frame">
+    <p class="admin-breadcrumb"><a asp-page="/Admin/Media/Index">← Médiathèque</a></p>
+    <h1 class="admin-title media-edit__title">@item.OriginalFileName</h1>
+
+    @if (Model.Saved)
+    {
+        <p class="form-notice" role="status">Modifications enregistrées. Les articles qui utilisent ce média ont été mis à jour.</p>
+    }
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <p class="form-alert" role="alert">Les modifications n’ont pas été enregistrées : corrigez les champs signalés.</p>
+    }
+
+    <div class="media-edit">
+        <div class="media-edit__preview">
+            @Html.Raw(isImage
+                ? MediaMarkup.Image(item, item.AltText, MediaMarkup.FrameSizes, ImageLoading.Eager)
+                : MediaMarkup.Video(item, item.AltText))
+        </div>
+
+        <div class="media-edit__details">
+            <dl class="details-list">
+                <dt>Type</dt>
+                <dd>@(isImage ? "Image" : "Vidéo") (@item.ContentType)</dd>
+                @if (item.Width is { } width && item.Height is { } height)
+                {
+                    <dt>Dimensions</dt>
+                    <dd>@width × @height</dd>
+                }
+                <dt>Poids</dt>
+                <dd>@MediaUploader.FormatSize(item.SizeBytes)</dd>
+                <dt>Ajouté le</dt>
+                <dd>@SiteTime.FormatDateTime(item.UploadedAt)</dd>
+            </dl>
+
+            <div class="field">
+                <label for="markdown-snippet">Code à insérer dans un article</label>
+                <div class="copy-field">
+                    <input id="markdown-snippet" readonly value="@Model.Markdown" data-copy-source />
+                    <button type="button" class="editor__button" data-copy-button hidden>Copier</button>
+                </div>
+            </div>
+
+            <form method="post" class="form">
+                <div class="field">
+                    <label asp-for="Form.AltText">@(isImage ? "Texte alternatif" : "Description pour les lecteurs d’écran (facultative)")</label>
+                    <textarea asp-for="Form.AltText" rows="3" maxlength="500" required="@isImage" aria-invalid="@Invalid("AltText")" aria-describedby="alt-error"></textarea>
+                    <span asp-validation-for="Form.AltText" class="field-error" id="alt-error"></span>
+                </div>
+                @if (!isImage)
+                {
+                    <div class="field">
+                        <label asp-for="Form.PosterId"></label>
+                        <select asp-for="Form.PosterId" aria-invalid="@Invalid("PosterId")" aria-describedby="poster-error">
+                            <option value="">Aucune (première image de la vidéo)</option>
+                            @foreach (var option in Model.PosterOptions)
+                            {
+                                <option value="@option.Id">@option.Label</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Form.PosterId" class="field-error" id="poster-error"></span>
+                    </div>
+                }
+                <div>
+                    <button type="submit" class="button">Enregistrer</button>
+                </div>
+            </form>
+
+            <section class="media-edit__danger" aria-labelledby="delete-title">
+                <h2 class="media-edit__subtitle" id="delete-title">Suppression</h2>
+                @if (Model.Uses.Count > 0)
+                {
+                    <p>Ce média est utilisé, il ne peut pas être supprimé :</p>
+                    <ul>
+                        @foreach (var use in Model.Uses)
+                        {
+                            <li>@use</li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <form method="post" asp-page-handler="Delete">
+                        <button type="submit" class="link-button link-button--danger" data-confirm="Supprimer définitivement ce média ?">Supprimer ce média</button>
+                    </form>
+                }
+            </section>
+        </div>
+    </div>
+</div>

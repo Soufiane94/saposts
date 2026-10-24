@@ -5,3 +5,17 @@ document.addEventListener("submit", (event) => {
     event.preventDefault();
   }
 });
+
+// Copy buttons next to read-only fields (shown only when the clipboard is available).
+for (const button of document.querySelectorAll("[data-copy-button]")) {
+  const source = button.parentElement.querySelector("[data-copy-source]");
+  if (!source || !navigator.clipboard) {
+    continue;
+  }
+  button.hidden = false;
+  button.addEventListener("click", async () => {
+    await navigator.clipboard.writeText(source.value);
+    button.textContent = "Copié";
+    setTimeout(() => { button.textContent = "Copier"; }, 2000);
+  });
+}

@@ -18,17 +18,26 @@
     {
         @* role="list": Safari drops list semantics when list-style is none. *@
         <ul class="post-list" role="list">
-            @foreach (var post in Model.Posts)
+            @foreach (var (post, index) in Model.Posts.Select((post, index) => (post, index)))
             {
                 <li>
-                    <article class="post-summary" lang="@post.Language.ToLanguageTag()">
-                        <h2 class="post-summary__title">
-                            <a asp-page="/Post" asp-route-slug="@post.Slug">@post.Title</a>
-                        </h2>
-                        <p class="post-summary__date">
-                            <time datetime="@SiteTime.ToIso(post.PublishedAt)">@SiteTime.FormatDate(post.PublishedAt, post.Language)</time>
-                        </p>
-                        <p class="post-summary__excerpt">@post.Excerpt</p>
+                    <article class="post-summary@(post.Cover is null ? "" : " post-summary--with-cover")" lang="@post.Language.ToLanguageTag()">
+                        <div class="post-summary__body">
+                            <h2 class="post-summary__title">
+                                <a asp-page="/Post" asp-route-slug="@post.Slug">@post.Title</a>
+                            </h2>
+                            <p class="post-summary__date">
+                                <time datetime="@SiteTime.ToIso(post.PublishedAt)">@SiteTime.FormatDate(post.PublishedAt, post.Language)</time>
+                            </p>
+                            <p class="post-summary__excerpt">@post.Excerpt</p>
+                        </div>
+                        @if (post.Cover is { } cover)
+                        {
+                            @* Decorative here: the title next to it says what the post is about. *@
+                            <div class="post-summary__cover">
+                                @Html.Raw(MediaMarkup.Image(cover, string.Empty, MediaMarkup.ThumbnailSizes, index == 0 ? ImageLoading.Eager : ImageLoading.Lazy))
+                            </div>
+                        }
                     </article>
                 </li>
             }

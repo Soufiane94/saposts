@@ -1,0 +1,22 @@
+@* Upload machinery shared by the post editor and the media library (driven by js/media-upload.js).
+   Must sit outside any other form: the dialog contains its own. The progress list
+   (data-upload-list) is placed by each page where it reads best. *@
+<div class="media-upload" data-media-upload data-upload-url="/admin/api/media">
+    @Html.AntiForgeryToken()
+    <dialog class="alt-dialog" aria-labelledby="alt-dialog-title" data-alt-dialog>
+        <form method="dialog" class="form">
+            <h2 class="alt-dialog__title" id="alt-dialog-title">Texte alternatif</h2>
+            <img class="alt-dialog__preview" alt="" data-alt-preview />
+            <p class="field-hint" data-alt-file></p>
+            <div class="field">
+                <label for="alt-dialog-input">Décrivez l’image pour les personnes qui ne la voient pas</label>
+                <textarea id="alt-dialog-input" rows="3" maxlength="500" required data-alt-input></textarea>
+                <p class="field-hint">Ce que l’image apporte au texte, en une phrase. Évitez « image de… ».</p>
+            </div>
+            <div class="alt-dialog__actions">
+                <button type="submit" class="button" value="confirm">Envoyer l’image</button>
+                <button type="submit" class="link-button" value="cancel" formnovalidate>Annuler</button>
+            </div>
+        </form>
+    </dialog>
+</div>

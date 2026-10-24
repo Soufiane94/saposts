@@ -16,7 +16,10 @@ public static class DataServiceCollectionExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart()
             .PostConfigure<IHostEnvironment>((options, environment) =>
-                options.DataPath = Path.GetFullPath(options.DataPath, environment.ContentRootPath));
+            {
+                options.DataPath = Path.GetFullPath(options.DataPath, environment.ContentRootPath);
+                options.MediaPath = Path.GetFullPath(options.MediaPath, environment.ContentRootPath);
+            });
 
         // Paths are resolved from options at first use (not read from configuration here),
         // so test hosts can point each instance at its own directory.

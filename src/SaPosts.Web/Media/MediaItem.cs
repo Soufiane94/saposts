@@ -1,6 +1,6 @@
 namespace SaPosts.Web.Media;
 
-/// <summary>An uploaded image or video. Its files live in media storage, keyed by <see cref="Id"/>.</summary>
+/// <summary>An uploaded image or video. Its files live in media storage, under its <see cref="Id"/>.</summary>
 public sealed class MediaItem
 {
     public Guid Id { get; set; }
@@ -14,12 +14,20 @@ public sealed class MediaItem
 
     public long SizeBytes { get; set; }
 
+    /// <summary>Images: size of the largest variant. Videos: as reported by the uploading browser, if known.</summary>
     public int? Width { get; set; }
 
     public int? Height { get; set; }
 
-    /// <summary>Required for images (enforced on upload).</summary>
+    /// <summary>Required for images. For videos, an optional label for screen readers.</summary>
     public string? AltText { get; set; }
+
+    /// <summary>Images: widths of the generated variants, ascending.</summary>
+    public List<int> Widths { get; set; } = [];
+
+    public bool HasAlpha { get; set; }
+
+    public bool IsAnimated { get; set; }
 
     /// <summary>Optional image shown before a video plays.</summary>
     public Guid? PosterId { get; set; }

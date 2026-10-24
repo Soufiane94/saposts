@@ -14,6 +14,7 @@ public sealed class PostModel(BlogDbContext db) : PageModel
     public async Task<IActionResult> OnGetAsync(string slug, CancellationToken cancellationToken)
     {
         var post = await db.Posts.AsNoTracking()
+            .Include(p => p.CoverMedia)
             .SingleOrDefaultAsync(p => p.Slug == slug && p.Status == PostStatus.Published, cancellationToken);
         if (post is not null)
         {

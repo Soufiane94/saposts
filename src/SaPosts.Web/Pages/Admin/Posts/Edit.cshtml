@@ -39,6 +39,24 @@
                 <span asp-validation-for="Form.Slug" class="field-error" id="slug-error"></span>
             </div>
             <div class="field">
+                <label asp-for="Form.CoverMediaId"></label>
+                @{
+                    var selectedCover = Model.CoverOptions.FirstOrDefault(o => o.Id == Model.Form.CoverMediaId);
+                }
+                <div class="cover-picker">
+                    <select asp-for="Form.CoverMediaId" data-cover-select aria-invalid="@Invalid("CoverMediaId")" aria-describedby="cover-hint cover-error">
+                        <option value="">Aucune</option>
+                        @foreach (var option in Model.CoverOptions)
+                        {
+                            <option value="@option.Id" data-thumbnail="@option.ThumbnailUrl">@option.Label</option>
+                        }
+                    </select>
+                    <img class="cover-picker__preview" src="@selectedCover?.ThumbnailUrl" alt="" hidden="@(selectedCover is null)" data-cover-preview />
+                </div>
+                <p class="field-hint" id="cover-hint">En tête de l’article, sur la page d’accueil et dans les aperçus de liens. Les images importées dans le contenu apparaissent aussi dans cette liste.</p>
+                <span asp-validation-for="Form.CoverMediaId" class="field-error" id="cover-error"></span>
+            </div>
+            <div class="field">
                 <label asp-for="Form.Excerpt"></label>
                 <textarea asp-for="Form.Excerpt" rows="3" required aria-invalid="@Invalid("Excerpt")" aria-describedby="excerpt-hint excerpt-error"></textarea>
                 <p class="field-hint" id="excerpt-hint">Une ou deux phrases, affichées sur la page d’accueil et dans les aperçus de liens.</p>
@@ -79,8 +97,11 @@
                     <button type="button" class="editor__button" data-command="list">Liste</button>
                     <button type="button" class="editor__button" data-command="quote">Citation</button>
                     <button type="button" class="editor__button" data-command="code">Code</button>
+                    <button type="button" class="editor__button" data-command="media">Image ou vidéo…</button>
+                    <input class="visually-hidden" type="file" multiple tabindex="-1" aria-hidden="true" accept="image/jpeg,image/png,image/webp,image/avif,image/gif,video/mp4,video/webm" data-media-input />
                 </div>
-                <p class="field-hint" id="body-hint">Intertitres avec <code>##</code> : le titre de l’article est déjà le titre principal de la page.</p>
+                <p class="field-hint" id="body-hint">Intertitres avec <code>##</code> : le titre de l’article est déjà le titre principal de la page. Glissez des images ou des vidéos dans le texte pour les insérer ; seules les images de la médiathèque sont affichées.</p>
+                <ul class="upload-list" role="list" aria-live="polite" data-upload-list></ul>
                 <textarea asp-for="Form.BodyMarkdown" rows="24" class="editor__source" aria-invalid="@Invalid("BodyMarkdown")" aria-describedby="body-hint body-error"></textarea>
                 <span asp-validation-for="Form.BodyMarkdown" class="field-error" id="body-error"></span>
             </div>
@@ -94,9 +115,11 @@
             <button type="submit" class="button">Enregistrer</button>
         </div>
     </form>
+    <partial name="_MediaUpload" />
 </div>
 
 @section Scripts {
     <script src="~/lib/tiny-mde/tiny-mde.tiny.js" asp-append-version="true" defer></script>
+    <script src="~/js/media-upload.js" asp-append-version="true" defer></script>
     <script src="~/js/post-editor.js" asp-append-version="true" defer></script>
 }

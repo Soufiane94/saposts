@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Threading.RateLimiting;
 
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -41,6 +43,10 @@ public static class AuthServiceCollectionExtensions
             options.AccessDeniedPath = "/admin/login";
             options.ExpireTimeSpan = TimeSpan.FromHours(12);
             options.SlidingExpiration = true;
+
+            // Scripts calling /admin/api need a status code, not a redirect to the login page.
+            options.Events.OnRedirectToLogin = context => RedirectOrStatus(context, StatusCodes.Status401Unauthorized);
+            options.Events.OnRedirectToAccessDenied = context => RedirectOrStatus(context, StatusCodes.Status403Forbidden);
         });
         services.AddAntiforgery(options => options.Cookie.Name = "saposts.antiforgery");
 
@@ -70,5 +76,19 @@ public static class AuthServiceCollectionExtensions
         });
 
         return services;
+    }
+
+    private static Task RedirectOrStatus(RedirectContext<CookieAuthenticationOptions> context, int statusCode)
+    {
+        if (context.Request.Path.StartsWithSegments("/admin/api", StringComparison.OrdinalIgnoreCase))
+        {
+            context.Response.StatusCode = statusCode;
+        }
+        else
+        {
+            context.Response.Redirect(context.RedirectUri);
+        }
+
+        return Task.CompletedTask;
     }
 }

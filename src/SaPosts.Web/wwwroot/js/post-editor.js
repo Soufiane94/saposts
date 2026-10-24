@@ -113,6 +113,56 @@
     }
   });
 
+  // Media: dropped on the editor or chosen with the toolbar button; each upload is inserted where
+  // the caret was, as its own paragraph. Uploaded images also become available as cover.
+  const media = window.SaPostsMedia;
+  const fileInput = toolbar.querySelector("[data-media-input]");
+  const coverSelect = form.querySelector("[data-cover-select]");
+  const coverPreview = form.querySelector("[data-cover-preview]");
+
+  // A media reference must be a paragraph of its own (blank lines around it) to render full width.
+  const insertMedia = (item, at) => {
+    const lines = editor.getContent().split("\n");
+    const position = at ?? { row: lines.length - 1, col: lines.at(-1).length };
+    const hasText = (row) => (lines[row] ?? "").trim().length > 0;
+    const before = hasText(position.row) ? "\n\n" : position.row > 0 && hasText(position.row - 1) ? "\n" : "";
+    const after = hasText(position.row + 1) ? "\n\n" : "\n";
+    editor.paste(`${before}${item.markdown}${after}`, position, position);
+
+    if (item.kind === "image" && coverSelect) {
+      const option = new Option(item.label, item.id);
+      option.dataset.thumbnail = item.thumbnailUrl;
+      coverSelect.add(option, 1);
+    }
+  };
+
+  const uploadAndInsert = async (files) => {
+    if (!media || files.length === 0) {
+      return;
+    }
+    // Uploads keep their order; each one goes after the previous.
+    let at = editor.getSelection();
+    await media.upload(files, (item) => {
+      insertMedia(item, at);
+      at = editor.getSelection();
+    });
+  };
+
+  editor.addEventListener("drop", (event) => uploadAndInsert([...event.dataTransfer.files]));
+  commands.media = () => fileInput.click();
+  fileInput.addEventListener("change", () => {
+    uploadAndInsert([...fileInput.files]);
+    fileInput.value = "";
+  });
+
+  coverSelect?.addEventListener("change", () => {
+    const thumbnail = coverSelect.selectedOptions[0]?.dataset.thumbnail;
+    coverPreview.hidden = !thumbnail;
+    if (thumbnail) {
+      coverPreview.src = thumbnail;
+    }
+  });
+
   // Ctrl/Cmd+B and +I would otherwise insert <b>/<i> elements into the contenteditable.
   surface.addEventListener("keydown", (event) => {
     if (!(event.ctrlKey || event.metaKey) || event.altKey) {

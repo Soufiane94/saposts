@@ -24,14 +24,29 @@ public sealed class BlogFactory : WebApplicationFactory<Program>
 
     public string? ConfiguredAdminPassword { get; init; } = AdminPassword;
 
+    /// <summary>Extra configuration, for example lower upload limits.</summary>
+    public Dictionary<string, string> Settings { get; init; } = [];
+
+    public string MediaPath => Path.Combine(DataPath, "media");
+
+    private Task<HttpClient>? adminClient;
+
+    /// <summary>One signed-in client per instance: signing in for every test would hit the login rate limit.</summary>
+    public Task<HttpClient> AdminClientAsync() => adminClient ??= AdminSession.LogInNewClientAsync(this);
+
     public HttpClient CreateClientWithoutRedirects() =>
         CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseSetting("Storage:DataPath", DataPath);
+        builder.UseSetting("Storage:MediaPath", MediaPath);
         builder.UseSetting("Admin:Email", ConfiguredAdminEmail);
         builder.UseSetting("Admin:Password", ConfiguredAdminPassword);
+        foreach (var (key, value) in Settings)
+        {
+            builder.UseSetting(key, value);
+        }
     }
 
     public override async ValueTask DisposeAsync()

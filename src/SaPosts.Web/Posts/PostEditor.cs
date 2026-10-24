@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 
 using SaPosts.Web.Data;
+using SaPosts.Web.Media;
 
 namespace SaPosts.Web.Posts;
 
@@ -12,6 +13,7 @@ public sealed record PostChanges(
     PostLanguage Language,
     PostStatus Status,
     DateTime? PublishedAt,
+    Guid? CoverMediaId,
     string BodyMarkdown);
 
 public enum PostSaveOutcome
@@ -19,6 +21,7 @@ public enum PostSaveOutcome
     Saved,
     NotFound,
     SlugTaken,
+    InvalidCover,
 }
 
 public sealed record PostSaveResult(PostSaveOutcome Outcome, int PostId = 0);
@@ -41,6 +44,12 @@ public sealed class PostEditor(BlogDbContext db, MarkdownRenderer renderer, Time
             {
                 return new PostSaveResult(PostSaveOutcome.NotFound);
             }
+        }
+
+        if (changes.CoverMediaId is { } coverId
+            && !await db.Media.AnyAsync(m => m.Id == coverId && m.Kind == MediaKind.Image, cancellationToken))
+        {
+            return new PostSaveResult(PostSaveOutcome.InvalidCover);
         }
 
         // An explicit slug must be free; a generated one gets a numeric suffix instead.
@@ -69,8 +78,9 @@ public sealed class PostEditor(BlogDbContext db, MarkdownRenderer renderer, Time
         post.Status = changes.Status;
         // Set on first publish, editable afterwards; kept if the post goes back to draft.
         post.PublishedAt = changes.PublishedAt ?? post.PublishedAt ?? (changes.Status == PostStatus.Published ? now : null);
+        post.CoverMediaId = changes.CoverMediaId;
         post.BodyMarkdown = changes.BodyMarkdown;
-        post.BodyHtml = renderer.Render(changes.BodyMarkdown);
+        post.BodyHtml = await renderer.RenderAsync(changes.BodyMarkdown, cancellationToken);
         post.RendererVersion = MarkdownRenderer.Version;
         post.UpdatedAt = now;
 
@@ -82,12 +92,21 @@ public sealed class PostEditor(BlogDbContext db, MarkdownRenderer renderer, Time
         await db.Posts.Where(p => p.Id == id).ExecuteDeleteAsync(cancellationToken) > 0;
 
     /// <summary>Re-renders posts whose HTML came from an older version of the Markdown pipeline.</summary>
-    public async Task RerenderOutdatedAsync(CancellationToken cancellationToken)
+    public Task RerenderOutdatedAsync(CancellationToken cancellationToken) =>
+        RerenderAsync(db.Posts.Where(p => p.RendererVersion < MarkdownRenderer.Version), cancellationToken);
+
+    /// <summary>Re-renders posts that embed a media item, after its alt text or poster changed.</summary>
+    public Task RerenderReferencingAsync(Guid mediaId, CancellationToken cancellationToken)
     {
-        var outdated = await db.Posts.Where(p => p.RendererVersion < MarkdownRenderer.Version).ToListAsync(cancellationToken);
-        foreach (var post in outdated)
+        var reference = MediaFiles.Reference(mediaId);
+        return RerenderAsync(db.Posts.Where(p => p.BodyMarkdown.Contains(reference)), cancellationToken);
+    }
+
+    private async Task RerenderAsync(IQueryable<Post> posts, CancellationToken cancellationToken)
+    {
+        foreach (var post in await posts.ToListAsync(cancellationToken))
         {
-            post.BodyHtml = renderer.Render(post.BodyMarkdown);
+            post.BodyHtml = await renderer.RenderAsync(post.BodyMarkdown, cancellationToken);
             post.RendererVersion = MarkdownRenderer.Version;
         }
 

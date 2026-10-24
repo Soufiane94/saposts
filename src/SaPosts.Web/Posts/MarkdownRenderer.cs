@@ -1,21 +1,28 @@
+using System.Globalization;
+
 using AngleSharp.Dom;
 
 using Ganss.Xss;
 
 using Markdig;
 using Markdig.Extensions.AutoIdentifiers;
+using Markdig.Renderers;
+using Markdig.Renderers.Html.Inlines;
 using Markdig.Syntax;
+using Markdig.Syntax.Inlines;
+
+using SaPosts.Web.Media;
 
 namespace SaPosts.Web.Posts;
 
 /// <summary>
-/// Markdown to safe HTML: Markdig with raw HTML disabled, then HtmlSanitizer with an explicit allowlist.
-/// The same pipeline serves the editor preview and the stored post body.
+/// Markdown to safe HTML: Markdig with raw HTML disabled, library media expanded to responsive
+/// markup, then HtmlSanitizer with an explicit allowlist. Serves the editor preview and stored bodies.
 /// </summary>
-public sealed class MarkdownRenderer
+public sealed class MarkdownRenderer(IMediaCatalog catalog)
 {
     /// <summary>Bump when the output changes: posts rendered by an older version are re-rendered at startup.</summary>
-    public const int Version = 1;
+    public const int Version = 2;
 
     // Pipelines are immutable and thread-safe. No MediaLinks (iframes) and no generic attributes ({style=…}).
     private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
@@ -30,7 +37,7 @@ public sealed class MarkdownRenderer
 
     private readonly HtmlSanitizer sanitizer = CreateSanitizer();
 
-    public string Render(string? markdown)
+    public async Task<string> RenderAsync(string? markdown, CancellationToken cancellationToken)
     {
         var document = Markdown.Parse(markdown ?? string.Empty, Pipeline);
 
@@ -40,7 +47,21 @@ public sealed class MarkdownRenderer
             heading.Level = 2;
         }
 
-        return sanitizer.Sanitize(Markdown.ToHtml(document, Pipeline));
+        var mediaIds = document.Descendants<LinkInline>()
+            .Where(link => link.IsImage)
+            .Select(link => MediaFiles.ParseReference(link.Url))
+            .OfType<Guid>()
+            .ToHashSet();
+        var media = await catalog.FindAsync(mediaIds, cancellationToken);
+
+        using var writer = new StringWriter(CultureInfo.InvariantCulture);
+        var renderer = new HtmlRenderer(writer);
+        Pipeline.Setup(renderer);
+        renderer.ObjectRenderers.ReplaceOrAdd<LinkInlineRenderer>(new MediaLinkRenderer(media));
+        renderer.Render(document);
+        await writer.FlushAsync(cancellationToken);
+
+        return sanitizer.Sanitize(writer.ToString());
     }
 
     private static HtmlSanitizer CreateSanitizer()
@@ -52,11 +73,18 @@ public sealed class MarkdownRenderer
         sanitizer.AllowedTags.UnionWith([
             "p", "h2", "h3", "h4", "h5", "h6", "a", "strong", "em", "del", "code", "pre", "blockquote",
             "ul", "ol", "li", "hr", "br", "img", "table", "thead", "tbody", "tr", "th", "td", "sup", "div",
+            "picture", "source", "video",
         ]);
 
         // No "style": inline styles would be blocked by the CSP anyway (pipe-table alignment is dropped).
         sanitizer.AllowedAttributes.Clear();
-        sanitizer.AllowedAttributes.UnionWith(["href", "src", "alt", "title", "id", "class", "start", "loading", "decoding", "tabindex"]);
+        sanitizer.AllowedAttributes.UnionWith([
+            "href", "src", "alt", "title", "id", "class", "start", "loading", "decoding", "tabindex",
+            "srcset", "sizes", "type", "width", "height", "fetchpriority",
+            "controls", "preload", "playsinline", "poster", "aria-label",
+        ]);
+        // srcset is already screened entry by entry (UriListAttributes default).
+        sanitizer.UriAttributes.Add("poster");
 
         sanitizer.AllowedSchemes.Clear();
         sanitizer.AllowedSchemes.UnionWith(["http", "https", "mailto"]);
@@ -72,6 +100,10 @@ public sealed class MarkdownRenderer
 
             switch (element.LocalName)
             {
+                case "img" or "source" or "video" when LoadsRemoteResource(element):
+                    // Readers' browsers must never fetch third-party resources.
+                    element.Remove();
+                    break;
                 case "img":
                     element.SetAttribute("loading", "lazy");
                     element.SetAttribute("decoding", "async");
@@ -84,5 +116,35 @@ public sealed class MarkdownRenderer
         };
 
         return sanitizer;
+    }
+
+    private static readonly string[] ResourceAttributes = ["src", "srcset", "poster"];
+
+    private static bool LoadsRemoteResource(IElement element) =>
+        ResourceAttributes
+            .Select(element.GetAttribute)
+            .Any(value => value is not null && (value.Contains("//", StringComparison.Ordinal) || value.Contains(':', StringComparison.Ordinal)));
+
+    /// <summary>Images that point to the media library become &lt;picture&gt; or &lt;video&gt;; any other image is dropped.</summary>
+    private sealed class MediaLinkRenderer(IReadOnlyDictionary<Guid, MediaItem> media) : LinkInlineRenderer
+    {
+        protected override void Write(HtmlRenderer renderer, LinkInline link)
+        {
+            if (!link.IsImage)
+            {
+                base.Write(renderer, link);
+                return;
+            }
+
+            if (MediaFiles.ParseReference(link.Url) is not { } id || !media.TryGetValue(id, out var item))
+            {
+                return;
+            }
+
+            var text = string.Concat(link.Descendants<LiteralInline>().Select(literal => literal.Content.ToString())).Trim();
+            renderer.Write(item.Kind == MediaKind.Video
+                ? MediaMarkup.Video(item, text.Length > 0 ? text : item.AltText)
+                : MediaMarkup.Image(item, text.Length > 0 ? text : item.AltText, MediaMarkup.FrameSizes, ImageLoading.Lazy));
+        }
     }
 }

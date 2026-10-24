@@ -204,7 +204,13 @@ namespace SaPosts.Web.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("HasAlpha")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int?>("Height")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsAnimated")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Kind")
@@ -228,6 +234,10 @@ namespace SaPosts.Web.Data.Migrations
 
                     b.Property<int?>("Width")
                         .HasColumnType("INTEGER");
+
+                    b.PrimitiveCollection<string>("Widths")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 

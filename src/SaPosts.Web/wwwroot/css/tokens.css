@@ -85,6 +85,7 @@
   --width-form: 28rem;
   --width-admin: 64rem;
   --width-field-min: 12rem;
+  --width-thumbnail: 12rem;    /* keep in sync with MediaMarkup.ThumbnailSizes */
 
   /* Controls: at least 44px tall, above the 24px WCAG 2.2 minimum target. */
   --size-control: 2.75rem;

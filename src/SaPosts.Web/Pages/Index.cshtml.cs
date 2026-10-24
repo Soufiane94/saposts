@@ -3,11 +3,12 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 
 using SaPosts.Web.Data;
+using SaPosts.Web.Media;
 using SaPosts.Web.Posts;
 
 namespace SaPosts.Web.Pages;
 
-public sealed record PostSummary(string Slug, string Title, string Excerpt, PostLanguage Language, DateTime PublishedAt);
+public sealed record PostSummary(string Slug, string Title, string Excerpt, PostLanguage Language, DateTime PublishedAt, MediaItem? Cover);
 
 public sealed class IndexModel(BlogDbContext db) : PageModel
 {
@@ -37,7 +38,7 @@ public sealed class IndexModel(BlogDbContext db) : PageModel
             .OrderByDescending(p => p.PublishedAt).ThenByDescending(p => p.Id)
             .Skip((PageNumber - 1) * PageSize)
             .Take(PageSize + 1)
-            .Select(p => new PostSummary(p.Slug, p.Title, p.Excerpt, p.Language, p.PublishedAt!.Value))
+            .Select(p => new PostSummary(p.Slug, p.Title, p.Excerpt, p.Language, p.PublishedAt!.Value, p.CoverMedia))
             .ToListAsync(cancellationToken);
 
         if (PageNumber > 1 && posts.Count == 0)
