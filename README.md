@@ -57,6 +57,14 @@ This also lifts a lockout. Once the account exists, you may remove the password 
 - Sign-in attempts are limited to 10 per 15 minutes per IP address.
 - Sessions last 12 hours, renewed while you use the admin.
 
+## Writing posts
+
+Sign in at `/admin`, then **Articles → Nouvel article**. The body is Markdown, previewed live as it
+will be published: paragraphs, `##` section headings, emphasis, links, lists, quotes, code blocks,
+tables and footnotes. Raw HTML is shown as text. Leave the slug empty to derive it from the title.
+Renaming a published post keeps its old address working (permanent redirect). The publication date
+is set on first publish and can be changed afterwards (Paris time).
+
 ## Deploy
 
 To be written once hosting is chosen (M6). The app listens on HTTP port 8080 and expects a reverse
@@ -68,5 +76,6 @@ To be written in M6.
 
 ## Licences
 
-The bundled Source Serif 4 font is licensed under the SIL Open Font License 1.1
-(`src/SaPosts.Web/wwwroot/fonts/source-serif-4/OFL.txt`).
+- Source Serif 4 font: SIL Open Font License 1.1 (`src/SaPosts.Web/wwwroot/fonts/source-serif-4/OFL.txt`).
+- TinyMDE editor: MIT (`src/SaPosts.Web/wwwroot/lib/tiny-mde/LICENSE.txt`).
+- Server libraries: Markdig (BSD-2-Clause), HtmlSanitizer (MIT), ASP.NET Core and EF Core (MIT).

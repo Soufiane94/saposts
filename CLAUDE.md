@@ -26,7 +26,9 @@ analyzers and `dotnet format` skip them.
   Interfaces only at real seams (media storage, mail sender, clock), no layered projects.
 - `tests/SaPosts.IntegrationTests`: `BlogFactory` gives each instance its own temp data directory.
   Tests that change shared state (lockout, rate limits) create their own instance.
-- `tests/SaPosts.UnitTests` (from M3): slugs, sanitization, validation. No tests for trivial code.
+  `AdminSession` signs in and submits forms with their antiforgery token.
+- `tests/SaPosts.UnitTests`: slugs, sanitization, validation, time zone. No tests for trivial code.
+- `wwwroot/lib/`: vendored third-party front-end files, each with its licence and `VERSION.txt`.
 
 ## Conventions
 
@@ -57,6 +59,8 @@ analyzers and `dotnet format` skip them.
 
 ## Decisions
 
+- **Approved additions beyond the brief**: Mailpit in a dev-only compose override (M5); 301 redirects
+  from former slugs (done in M3). Declined: TOTP 2FA.
 - **Hosting**: still open. Vercel is not possible (no .NET runtime, ephemeral filesystem).
   The target is a small Linux VM running this compose file behind a TLS proxy (decided at M6).
 - **SQLite** in WAL mode, single instance by design. Backups with `VACUUM INTO`, not file copies.
@@ -74,7 +78,24 @@ analyzers and `dotnet format` skip them.
   rate limit needs too.
 - **Encoding**: `WebEncoderOptions` allows all Unicode ranges, so French text is not entity-encoded.
 - Validation is server-side only (client validation disabled: no validation scripts).
-- **Markdown** is rendered on save (Markdig → HtmlSanitizer) and stored with a renderer version;
-  the editor preview calls the same server pipeline.
+- **Markdown** (`Posts/MarkdownRenderer.cs`) is rendered on save (Markdig → HtmlSanitizer) and
+  stored with `RendererVersion`; bump `MarkdownRenderer.Version` whenever output changes and posts
+  are re-rendered at startup. The editor preview (`?handler=Preview`) uses the same renderer.
+  Raw HTML disabled; no MediaLinks/generic attributes; explicit tag/attribute allowlist with
+  http/https/mailto only; no `style` (CSP), so pipe-table alignment is dropped; `#` renders as h2
+  (the title is the only h1); `pre`/`table` get `tabindex="0"` (scrollable regions).
+- **Editor**: TinyMDE 0.2.35, `tiny` build without its toolbar (vendored, MIT). Chosen because it is
+  the candidate compatible with the strict CSP (EasyMDE: CDN fetches and a second Markdown parser;
+  OverType: injects `<style>`; ink-mde: unmaintained). Its gaps are patched in `post-editor.js`:
+  ARIA on the contenteditable, our own `<button>` toolbar, command state read at call time
+  (`toggleCommandState` uses a stale cache), caret moved past markers inserted on empty lines.
+  Without JS the plain textarea still works.
+- **Slugs**: generated from the title (accents folded, numeric suffix if taken); an explicit slug
+  that is taken is rejected. Renaming a post that was ever published stores the old slug in
+  `PostSlugRedirects` (301 to the current slug); a slug reused by a post replaces its redirect.
+- **URLs**: posts at `/articles/{slug}`, home pagination at `/page/{n}` (`?page=` would clash with
+  the reserved Razor Pages `page` route value), `/page/1` 301s to `/`.
+- **Dates** display in `Site:TimeZone` (Europe/Paris) and in the post's language (fr-FR / en-GB);
+  the admin types publication dates in Paris time (`SiteTime`).
 - **Contact messages** are stored first, then sent by a background service (the table is the outbox).
 - **Absolute URLs** (canonical, OG, RSS, sitemap) come from configuration, never the `Host` header.
