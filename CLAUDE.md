@@ -26,7 +26,9 @@ analyzers and `dotnet format` skip them.
   Interfaces only at real seams (media storage, mail sender, clock), no layered projects.
 - `tests/SaPosts.IntegrationTests`: `BlogFactory` gives each instance its own temp data directory.
   Tests that change shared state (lockout, rate limits) create their own instance.
-  `AdminSession` signs in and submits forms with their antiforgery token.
+  `AdminSession` signs in and submits forms with their antiforgery token; `factory.AdminClientAsync()`
+  signs in once per instance (the login rate limit is real in tests). `TestMedia` generates fixtures
+  with libvips, including a JPEG with hand-built EXIF/GPS and XMP to prove stripping.
 - `tests/SaPosts.UnitTests`: slugs, sanitization, validation, time zone. No tests for trivial code.
 - `wwwroot/lib/`: vendored third-party front-end files, each with its licence and `VERSION.txt`.
 
@@ -59,6 +61,35 @@ analyzers and `dotnet format` skip them.
 
 ## Decisions
 
+- **Images** (`Media/ImageProcessor.cs`): NetVips 3.2 + NetVips.Native 8.18 (libvips; MIT wrapper,
+  LGPL-3.0+ natives, dynamically loaded). ImageSharp 4 rejected: Six Labors Split License and no AVIF
+  encoder. All libvips loaders are blocked except JPEG/PNG/GIF(nsgif)/WebP/HEIF; a test asserts SVG
+  and TIFF fail to load (libvips ignores unknown names silently). Variants at 400/800/1200/1600 px
+  (≤ original) in AVIF (Q55, effort 3), WebP and a JPEG/PNG fallback (PNG if alpha; libvips decodes
+  every GIF with alpha); animated GIF/WebP → one width ≤ 800 px, WebP + GIF. `og.jpg` 1200×630 crop
+  for link previews. `keep=none` strips EXIF/GPS/XMP/IPTC/ICC. Thumbnail reads sequentially, so each
+  resized image is `CopyMemory()`'d before its several encodes. 50 MP / 300 frames cap.
+- **Uploads** (`Media/MediaUploader.cs`, `POST /admin/api/media`): `MultipartReader`, fields first
+  (alt, width, height) then the file, streamed to `{MediaPath}/.staging` while the type is sniffed
+  from the first 256 bytes (`MediaFormats.Detect`: ftyp brands, EBML DocType; no QuickTime, HEIC,
+  Matroska, SVG) and the per-type limit is enforced by counting bytes. Kestrel's body limit is raised
+  for that endpoint only. Antiforgery token in the `RequestVerificationToken` header (validated
+  without reading the body). `/admin/api/*` answers 401/403 instead of redirecting to the login page.
+- **Videos** are stored untouched (`original.mp4|webm`); dimensions come from the uploading browser
+  (it also warns when it cannot decode the file, e.g. HEVC); `Mp4Inspector` warns when moov is after
+  mdat (no faststart). Optional poster = an image from the library.
+- **Storage**: `IMediaStorage` (local disk implementation, one folder per media id) is the seam for
+  object storage. Served by `GET /media/{id}/{file}` with ranges, ETag and a 1-year immutable cache
+  (a new upload gets a new id; files never change). Draft media is reachable by its unguessable URL.
+- **Media in posts**: Markdown `![alt](/media/{id})`; `MarkdownRenderer` (version 2) expands it into
+  `<picture>`/`<video>` via `MediaMarkup` (shared with Razor covers and thumbnails). Any other image,
+  and any element with an absolute URL in src/srcset/poster, is dropped: readers' browsers make no
+  third-party requests. Empty Markdown alt falls back to the library alt (required for images).
+  Changing alt text or poster re-renders the posts that reference the item; an item used as cover,
+  in a body or as a poster cannot be deleted.
+- **Admin CSP** adds `blob:` to img-src/media-src (previews of local files before upload); the public
+  CSP is unchanged.
+- **Docker** publishes for `$TARGETARCH` (amd64/arm64) so only that platform's libvips is shipped.
 - **Approved additions beyond the brief**: Mailpit in a dev-only compose override (M5); 301 redirects
   from former slugs (done in M3). Declined: TOTP 2FA.
 - **Hosting**: still open. Vercel is not possible (no .NET runtime, ephemeral filesystem).
