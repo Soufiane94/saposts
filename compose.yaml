@@ -1,0 +1,22 @@
+# docker compose up --build  →  http://localhost:8080
+# Settings come from .env (copy .env.example); the database and media live in named volumes.
+name: saposts
+
+services:
+  web:
+    build: .
+    image: saposts-web:local
+    restart: unless-stopped
+    # Bound to loopback: in production a reverse proxy on the same host terminates TLS.
+    ports:
+      - "127.0.0.1:${HTTP_PORT:-8080}:8080"
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - data:/data
+      - media:/media
+
+volumes:
+  data:
+  media:
