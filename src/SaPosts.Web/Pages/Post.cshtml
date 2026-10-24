@@ -1,0 +1,18 @@
+@page "/articles/{slug}"
+@model PostModel
+@inject SiteTime SiteTime
+@{
+    var post = Model.Post;
+    var publishedAt = post.PublishedAt!.Value;
+    ViewData["Title"] = post.Title;
+}
+<article class="frame post" lang="@post.Language.ToLanguageTag()">
+    <header class="post__header">
+        <h1 class="post__title">@post.Title</h1>
+        <p class="post__meta">
+            <time datetime="@SiteTime.ToIso(publishedAt)">@SiteTime.FormatDate(publishedAt, post.Language)</time>
+        </p>
+    </header>
+    @* Sanitized when the post was saved (MarkdownRenderer). *@
+    <div class="prose">@Html.Raw(post.BodyHtml)</div>
+</article>

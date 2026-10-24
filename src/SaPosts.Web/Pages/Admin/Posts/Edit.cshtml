@@ -1,0 +1,102 @@
+@page "{id:int?}"
+@model SaPosts.Web.Pages.Admin.Posts.EditModel
+@functions {
+    private string? Invalid(string field) =>
+        ViewData.ModelState.TryGetValue($"Form.{field}", out var entry) && entry.Errors.Count > 0 ? "true" : null;
+}
+@{
+    ViewData["Title"] = Model.PostId is null ? "Nouvel article" : "Modifier l’article";
+}
+<div class="admin-frame">
+    <div class="admin-toolbar">
+        <h1 class="admin-title">@ViewData["Title"]</h1>
+        @if (Model.PublicUrl is not null)
+        {
+            <a href="@Model.PublicUrl">Voir l’article publié</a>
+        }
+    </div>
+
+    @if (Model.Saved)
+    {
+        <p class="form-notice" role="status">Article enregistré.</p>
+    }
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <p class="form-alert" role="alert">L’article n’a pas été enregistré : corrigez les champs signalés.</p>
+    }
+
+    <form method="post" class="post-form" asp-route-id="@Model.PostId" data-post-editor data-preview-url="@Url.Page("/Admin/Posts/Edit", "Preview")">
+        <div class="post-form__meta">
+            <div class="field">
+                <label asp-for="Form.Title"></label>
+                <input asp-for="Form.Title" required data-slug-source aria-invalid="@Invalid("Title")" aria-describedby="title-error" />
+                <span asp-validation-for="Form.Title" class="field-error" id="title-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Form.Slug"></label>
+                <input asp-for="Form.Slug" data-slug-target spellcheck="false" autocapitalize="off" aria-invalid="@Invalid("Slug")" aria-describedby="slug-hint slug-error" />
+                <p class="field-hint" id="slug-hint">Vide, il est déduit du titre. Renommer un article publié redirige son ancienne adresse vers la nouvelle.</p>
+                <span asp-validation-for="Form.Slug" class="field-error" id="slug-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Form.Excerpt"></label>
+                <textarea asp-for="Form.Excerpt" rows="3" required aria-invalid="@Invalid("Excerpt")" aria-describedby="excerpt-hint excerpt-error"></textarea>
+                <p class="field-hint" id="excerpt-hint">Une ou deux phrases, affichées sur la page d’accueil et dans les aperçus de liens.</p>
+                <span asp-validation-for="Form.Excerpt" class="field-error" id="excerpt-error"></span>
+            </div>
+            <div class="field-row">
+                <div class="field">
+                    <label asp-for="Form.Language"></label>
+                    <select asp-for="Form.Language">
+                        <option value="French">Français</option>
+                        <option value="English">English</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label asp-for="Form.Status"></label>
+                    <select asp-for="Form.Status">
+                        <option value="Draft">Brouillon</option>
+                        <option value="Published">Publié</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label asp-for="Form.PublishedAt"></label>
+                    <input asp-for="Form.PublishedAt" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" aria-invalid="@Invalid("PublishedAt")" aria-describedby="published-hint published-error" />
+                    <p class="field-hint" id="published-hint">Heure de Paris. Renseignée automatiquement à la première publication.</p>
+                    <span asp-validation-for="Form.PublishedAt" class="field-error" id="published-error"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="editor-layout">
+            <div class="field editor">
+                <label asp-for="Form.BodyMarkdown" id="body-label"></label>
+                <div class="editor__toolbar" role="toolbar" aria-label="Mise en forme" aria-controls="Form_BodyMarkdown" hidden>
+                    <button type="button" class="editor__button" data-command="heading">Intertitre</button>
+                    <button type="button" class="editor__button" data-command="bold" aria-keyshortcuts="Control+B">Gras</button>
+                    <button type="button" class="editor__button" data-command="italic" aria-keyshortcuts="Control+I">Italique</button>
+                    <button type="button" class="editor__button" data-command="link">Lien</button>
+                    <button type="button" class="editor__button" data-command="list">Liste</button>
+                    <button type="button" class="editor__button" data-command="quote">Citation</button>
+                    <button type="button" class="editor__button" data-command="code">Code</button>
+                </div>
+                <p class="field-hint" id="body-hint">Intertitres avec <code>##</code> : le titre de l’article est déjà le titre principal de la page.</p>
+                <textarea asp-for="Form.BodyMarkdown" rows="24" class="editor__source" aria-invalid="@Invalid("BodyMarkdown")" aria-describedby="body-hint body-error"></textarea>
+                <span asp-validation-for="Form.BodyMarkdown" class="field-error" id="body-error"></span>
+            </div>
+            <section class="preview" aria-labelledby="preview-title">
+                <h2 class="preview__title" id="preview-title">Aperçu</h2>
+                <div class="prose preview__content" data-preview>@Html.Raw(Model.PreviewHtml)</div>
+            </section>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="button">Enregistrer</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="~/lib/tiny-mde/tiny-mde.tiny.js" asp-append-version="true" defer></script>
+    <script src="~/js/post-editor.js" asp-append-version="true" defer></script>
+}

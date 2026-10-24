@@ -1,5 +1,51 @@
 @page
+@model IndexModel
+@inject SiteTime SiteTime
+@{
+    if (Model.PageNumber > 1)
+    {
+        ViewData["Title"] = $"Articles, page {Model.PageNumber}";
+    }
+}
 <div class="frame">
-    <h1 class="visually-hidden">Articles</h1>
-    <p class="empty-state">Aucun article publié pour le moment.</p>
+    <h1 class="visually-hidden">Articles@(Model.PageNumber > 1 ? $", page {Model.PageNumber}" : "")</h1>
+
+    @if (Model.Posts.Count == 0)
+    {
+        <p class="empty-state">Aucun article publié pour le moment.</p>
+    }
+    else
+    {
+        @* role="list": Safari drops list semantics when list-style is none. *@
+        <ul class="post-list" role="list">
+            @foreach (var post in Model.Posts)
+            {
+                <li>
+                    <article class="post-summary" lang="@post.Language.ToLanguageTag()">
+                        <h2 class="post-summary__title">
+                            <a asp-page="/Post" asp-route-slug="@post.Slug">@post.Title</a>
+                        </h2>
+                        <p class="post-summary__date">
+                            <time datetime="@SiteTime.ToIso(post.PublishedAt)">@SiteTime.FormatDate(post.PublishedAt, post.Language)</time>
+                        </p>
+                        <p class="post-summary__excerpt">@post.Excerpt</p>
+                    </article>
+                </li>
+            }
+        </ul>
+    }
+
+    @if (Model.PageNumber > 1 || Model.HasOlder)
+    {
+        <nav class="pagination" aria-label="Pages d’articles">
+            @if (Model.PageNumber > 1)
+            {
+                <a class="pagination__newer" rel="prev" href="@Model.PageUrl(Model.PageNumber - 1)">← Articles plus récents</a>
+            }
+            @if (Model.HasOlder)
+            {
+                <a class="pagination__older" rel="next" href="@Model.PageUrl(Model.PageNumber + 1)">Articles plus anciens →</a>
+            }
+        </nav>
+    }
 </div>

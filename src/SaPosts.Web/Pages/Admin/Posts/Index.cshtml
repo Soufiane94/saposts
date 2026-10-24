@@ -1,0 +1,61 @@
+@page
+@model SaPosts.Web.Pages.Admin.Posts.IndexModel
+@inject SiteTime SiteTime
+@{
+    ViewData["Title"] = "Articles";
+}
+<div class="admin-frame">
+    <div class="admin-toolbar">
+        <h1 class="admin-title">Articles</h1>
+        <a class="button" asp-page="/Admin/Posts/Edit">Nouvel article</a>
+    </div>
+
+    @if (Model.Deleted)
+    {
+        <p class="form-notice" role="status">Article supprimé.</p>
+    }
+
+    @if (Model.Posts.Count == 0)
+    {
+        <p class="empty-state">Aucun article pour le moment.</p>
+    }
+    else
+    {
+        <div class="table-scroll" role="region" aria-label="Liste des articles" tabindex="0">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Titre</th>
+                        <th scope="col">Statut</th>
+                        <th scope="col">Publication</th>
+                        <th scope="col">Modifié le</th>
+                        <th scope="col"><span class="visually-hidden">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var post in Model.Posts)
+                    {
+                        var published = post.Status == PostStatus.Published;
+                        <tr>
+                            <td><a asp-page="/Admin/Posts/Edit" asp-route-id="@post.Id">@post.Title</a></td>
+                            <td><span class="status @(published ? "status--published" : "status--draft")">@(published ? "Publié" : "Brouillon")</span></td>
+                            <td>@(post.PublishedAt is { } publishedAt ? SiteTime.FormatDateTime(publishedAt) : "—")</td>
+                            <td>@SiteTime.FormatDateTime(post.UpdatedAt)</td>
+                            <td class="admin-table__actions">
+                                @if (published)
+                                {
+                                    <a asp-page="/Post" asp-route-slug="@post.Slug">Voir<span class="visually-hidden"> « @post.Title »</span></a>
+                                }
+                                <form method="post" asp-page-handler="Delete" asp-route-id="@post.Id">
+                                    <button type="submit" class="link-button link-button--danger" data-confirm="Supprimer « @post.Title » ? Cette action est définitive.">
+                                        Supprimer<span class="visually-hidden"> « @post.Title »</span>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

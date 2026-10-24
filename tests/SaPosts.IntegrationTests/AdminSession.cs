@@ -5,10 +5,18 @@ namespace SaPosts.IntegrationTests;
 /// <summary>Drives the admin forms like a browser: fetch the page, then post with its antiforgery token.</summary>
 internal static partial class AdminSession
 {
+    public static async Task<HttpClient> SignedInClientAsync(BlogFactory factory)
+    {
+        var client = factory.CreateClientWithoutRedirects();
+        var response = await LogInAsync(client, BlogFactory.AdminEmail, BlogFactory.AdminPassword);
+        Assert.Equal(System.Net.HttpStatusCode.Redirect, response.StatusCode);
+        return client;
+    }
+
     public static Task<HttpResponseMessage> LogInAsync(HttpClient client, string email, string password, string? returnUrl = null)
     {
         var url = returnUrl is null ? "/admin/login" : $"/admin/login?returnUrl={Uri.EscapeDataString(returnUrl)}";
-        return PostFormAsync(client, url, new Dictionary<string, string>
+        return SubmitFormAsync(client, url, url, new Dictionary<string, string>
         {
             ["Input.Email"] = email,
             ["Input.Password"] = password,
@@ -16,12 +24,10 @@ internal static partial class AdminSession
     }
 
     public static Task<HttpResponseMessage> LogOutAsync(HttpClient client) =>
-        PostFormAsync(client, "/admin", "/admin/logout", new Dictionary<string, string>());
+        SubmitFormAsync(client, "/admin/posts", "/admin/logout", new Dictionary<string, string>());
 
-    private static Task<HttpResponseMessage> PostFormAsync(HttpClient client, string url, Dictionary<string, string> fields) =>
-        PostFormAsync(client, url, url, fields);
-
-    private static async Task<HttpResponseMessage> PostFormAsync(
+    /// <summary>Gets <paramref name="formPage"/> for its antiforgery token, then posts <paramref name="fields"/> to <paramref name="action"/>.</summary>
+    public static async Task<HttpResponseMessage> SubmitFormAsync(
         HttpClient client, string formPage, string action, Dictionary<string, string> fields)
     {
         var cancellationToken = TestContext.Current.CancellationToken;

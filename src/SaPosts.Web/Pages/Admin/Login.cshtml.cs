@@ -43,7 +43,7 @@ public sealed class LoginModel(SignInManager<IdentityUser> signInManager, IOptio
         return Page();
     }
 
-    private string SafeReturnUrl => Url.IsLocalUrl(ReturnUrl) ? ReturnUrl : Url.Page("/Admin/Index")!;
+    private string SafeReturnUrl => Url.IsLocalUrl(ReturnUrl) ? ReturnUrl : Url.Page("/Admin/Posts/Index")!;
 }
 
 public sealed class LoginInput

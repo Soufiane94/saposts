@@ -7,6 +7,7 @@ using SaPosts.Web.Auth;
 using SaPosts.Web.Data;
 using SaPosts.Web.Infrastructure;
 using SaPosts.Web.Infrastructure.Security;
+using SaPosts.Web.Posts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +21,9 @@ builder.Services
 
 builder.Services.AddBlogData();
 builder.Services.AddAdminAuthentication();
+builder.Services.AddPosts();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<SiteTime>();
 
 builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
 // The default encoder escapes every non-ASCII character ("é" becomes "&#xE9;"); French text should stay readable.
@@ -29,6 +33,8 @@ builder.Services
     {
         options.Conventions.AuthorizeFolder("/Admin");
         options.Conventions.AllowAnonymousToPage("/Admin/Login");
+        // Home pagination as /page/2 ("page" is reserved as a route value in Razor Pages, so no ?page=2).
+        options.Conventions.AddPageRoute("/Index", "page/{pageNumber:int}");
     })
     // Server-side validation only: no validation scripts, so no data-val-* attributes either.
     .AddViewOptions(options => options.HtmlHelperOptions.ClientValidationEnabled = false);

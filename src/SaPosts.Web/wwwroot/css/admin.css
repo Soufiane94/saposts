@@ -53,6 +53,204 @@
 }
 
 .admin-title {
-  margin-bottom: var(--space-5);
   font-size: var(--font-size-h2);
+}
+
+.admin-nav {
+  display: flex;
+  gap: var(--space-5);
+  margin-right: auto;
+}
+
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+/* Lists */
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  font-size: var(--font-size-small);
+  border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: var(--space-3);
+  text-align: left;
+  vertical-align: baseline;
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.admin-table th {
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  border-bottom-color: var(--color-border-strong);
+}
+
+.admin-table__actions {
+  white-space: nowrap;
+}
+
+.admin-table__actions > * + * {
+  margin-left: var(--space-4);
+}
+
+.admin-table__actions form {
+  display: inline;
+}
+
+.status {
+  display: inline-block;
+  padding: 0 var(--space-2);
+  white-space: nowrap;
+  border: var(--border-width) solid currentColor;
+  border-radius: var(--radius);
+}
+
+.status--published {
+  color: var(--color-accent);
+}
+
+.status--draft {
+  color: var(--color-text-muted);
+}
+
+/* Post editor */
+
+.post-form__meta {
+  display: grid;
+  gap: var(--space-5);
+  max-width: var(--width-prose);
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--width-field-min), 1fr));
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.editor-layout {
+  display: grid;
+  gap: var(--space-6);
+  margin-top: var(--space-7);
+}
+
+/* Side by side once both columns can hold a readable measure. */
+@media (min-width: 75rem) {
+  .editor-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .preview {
+    position: sticky;
+    top: var(--space-4);
+    max-height: calc(100vh - 2 * var(--space-4));
+    overflow-y: auto;
+  }
+}
+
+.editor {
+  gap: var(--space-2);
+}
+
+.editor__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.editor__toolbar[hidden] {
+  display: none;
+}
+
+.editor__button {
+  min-height: var(--size-control);
+  padding: var(--space-1) var(--space-3);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-small);
+  background: var(--color-surface-raised);
+  border: var(--border-width) solid var(--color-border-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.editor__button:hover {
+  border-color: var(--color-text);
+}
+
+.field .editor__source,
+.editor__surface {
+  min-height: 60vh;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-body);
+}
+
+/* TinyMDE renders the Markdown into this element; its own stylesheet is not used. */
+.editor__surface {
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text);
+  white-space: pre-wrap;
+  background: var(--color-surface-raised);
+  border: var(--border-width) solid var(--color-border-strong);
+  border-radius: var(--radius);
+}
+
+.editor__surface:focus-visible {
+  outline-offset: var(--focus-ring-offset-tight);
+}
+
+.editor__surface .TMMark {
+  color: var(--color-text-muted);
+}
+
+.editor__surface :is(.TMH1, .TMH2, .TMH3, .TMH4, .TMH5, .TMH6, .TMSetextH1, .TMSetextH2, .TMStrong) {
+  font-weight: var(--font-weight-semibold);
+}
+
+.editor__surface :is(.TMEm, .TMBlockquote, .TMLinkTitle) {
+  font-style: italic;
+}
+
+.editor__surface :is(.TMCode, .TMFencedCodeBacktick, .TMFencedCodeTilde, .TMIndentedCode) {
+  background: var(--color-surface-sunken);
+}
+
+.editor__surface :is(.TMLink, .TMLinkDestination, .TMAutolink, .TMImage) {
+  color: var(--color-accent);
+}
+
+.editor__surface .TMBlankLine {
+  min-height: 1lh;
+}
+
+.preview {
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.preview__title {
+  margin-bottom: var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-semibold);
+}
+
+.form-actions {
+  margin-top: var(--space-6);
 }

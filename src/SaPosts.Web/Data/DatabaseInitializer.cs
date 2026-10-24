@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 using SaPosts.Web.Auth;
+using SaPosts.Web.Posts;
 
 namespace SaPosts.Web.Data;
 
@@ -28,5 +29,7 @@ public static class DatabaseInitializer
             services.GetRequiredService<IOptions<AdminOptions>>().Value,
             services.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(AdminAccount)),
             cancellationToken);
+
+        await services.GetRequiredService<PostEditor>().RerenderOutdatedAsync(cancellationToken);
     }
 }

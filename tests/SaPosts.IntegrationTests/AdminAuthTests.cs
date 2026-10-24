@@ -24,11 +24,11 @@ public sealed class AdminAuthTests(BlogFactory factory) : IClassFixture<BlogFact
 
         var login = await AdminSession.LogInAsync(client, BlogFactory.AdminEmail, BlogFactory.AdminPassword);
         Assert.Equal(HttpStatusCode.Redirect, login.StatusCode);
-        Assert.Equal("/admin", login.Headers.Location!.OriginalString);
+        Assert.Equal("/admin/posts", login.Headers.Location!.OriginalString);
 
-        var dashboard = await client.GetAsync(new Uri("/admin", UriKind.Relative), CancellationToken);
+        var dashboard = await client.GetAsync(new Uri("/admin/posts", UriKind.Relative), CancellationToken);
         Assert.Equal(HttpStatusCode.OK, dashboard.StatusCode);
-        Assert.Contains(BlogFactory.AdminEmail, await dashboard.Content.ReadAsStringAsync(CancellationToken), StringComparison.Ordinal);
+        Assert.Contains("Nouvel article", await dashboard.Content.ReadAsStringAsync(CancellationToken), StringComparison.Ordinal);
         Assert.True(dashboard.Headers.CacheControl?.NoStore);
 
         var logout = await AdminSession.LogOutAsync(client);
@@ -48,7 +48,7 @@ public sealed class AdminAuthTests(BlogFactory factory) : IClassFixture<BlogFact
         var response = await AdminSession.LogInAsync(client, BlogFactory.AdminEmail, BlogFactory.AdminPassword, returnUrl);
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
-        Assert.Equal("/admin", response.Headers.Location!.OriginalString);
+        Assert.Equal("/admin/posts", response.Headers.Location!.OriginalString);
     }
 
     [Fact]

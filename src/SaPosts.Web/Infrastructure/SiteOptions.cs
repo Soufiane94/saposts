@@ -14,4 +14,8 @@ public sealed class SiteOptions
 
     [Required, Url]
     public string PortfolioUrl { get; set; } = string.Empty;
+
+    /// <summary>IANA time zone used to display dates and to read dates typed in the admin.</summary>
+    [Required]
+    public string TimeZone { get; set; } = "Europe/Paris";
 }
