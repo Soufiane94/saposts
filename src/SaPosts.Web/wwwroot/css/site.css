@@ -194,3 +194,96 @@ a:hover {
 .empty-state {
   color: var(--color-text-muted);
 }
+
+/* Forms (admin and contact) */
+
+.form {
+  display: grid;
+  gap: var(--space-5);
+  max-width: var(--width-form);
+}
+
+.field {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.field label {
+  font-weight: var(--font-weight-semibold);
+}
+
+.field input,
+.field textarea,
+.field select {
+  width: 100%;
+  min-height: var(--size-control);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text);
+  font: inherit;
+  background: var(--color-surface-raised);
+  border: var(--border-width) solid var(--color-border-strong);
+  border-radius: var(--radius);
+}
+
+.field input:focus-visible,
+.field textarea:focus-visible,
+.field select:focus-visible {
+  outline-offset: var(--focus-ring-offset-tight);
+}
+
+/* Validation messages render as an empty span when the field is valid. */
+.field-validation-valid {
+  display: none;
+}
+
+.field-error {
+  color: var(--color-danger);
+  font-size: var(--font-size-small);
+}
+
+.form-alert {
+  max-width: var(--width-form);
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-danger);
+  border: var(--border-width) solid currentColor;
+  border-left-width: var(--border-width-emphasis);
+  border-radius: var(--radius);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--size-control);
+  padding: var(--space-2) var(--space-5);
+  color: var(--color-on-accent);
+  font: inherit;
+  font-weight: var(--font-weight-semibold);
+  background: var(--color-accent);
+  border: var(--border-width) solid var(--color-accent);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--color-accent-strong);
+  border-color: var(--color-accent-strong);
+}
+
+.link-button {
+  padding: 0;
+  color: var(--color-accent);
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: var(--border-width);
+  text-underline-offset: 0.18em;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  color: var(--color-accent-strong);
+  text-decoration-thickness: calc(var(--border-width) * 2);
+}

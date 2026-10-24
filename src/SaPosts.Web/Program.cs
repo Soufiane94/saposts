@@ -1,3 +1,10 @@
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
+
+using Microsoft.Extensions.WebEncoders;
+
+using SaPosts.Web.Auth;
+using SaPosts.Web.Data;
 using SaPosts.Web.Infrastructure;
 using SaPosts.Web.Infrastructure.Security;
 
@@ -11,11 +18,26 @@ builder.Services
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
-builder.Services.AddRazorPages();
-builder.Services.AddHealthChecks();
+builder.Services.AddBlogData();
+builder.Services.AddAdminAuthentication();
+
+builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
+// The default encoder escapes every non-ASCII character ("é" becomes "&#xE9;"); French text should stay readable.
+builder.Services.Configure<WebEncoderOptions>(options => options.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All));
+builder.Services
+    .AddRazorPages(options =>
+    {
+        options.Conventions.AuthorizeFolder("/Admin");
+        options.Conventions.AllowAnonymousToPage("/Admin/Login");
+    })
+    // Server-side validation only: no validation scripts, so no data-val-* attributes either.
+    .AddViewOptions(options => options.HtmlHelperOptions.ClientValidationEnabled = false);
+
 builder.Services.AddHsts(options => options.MaxAge = TimeSpan.FromDays(365));
 
 var app = builder.Build();
+
+await app.InitializeDatabaseAsync();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -25,8 +47,13 @@ if (!app.Environment.IsDevelopment())
 app.UseSecurityHeaders();
 app.UseRequestLocalization("fr-FR");
 
+app.UseRouting();
+app.UseRateLimiter();
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapStaticAssets();
 app.MapHealthChecks("/healthz");
 app.MapRazorPages().WithStaticAssets();
 
-app.Run();
+await app.RunAsync();

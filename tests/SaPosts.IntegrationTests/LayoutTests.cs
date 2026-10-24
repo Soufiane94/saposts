@@ -1,11 +1,9 @@
 using System.Text.RegularExpressions;
 
-using Microsoft.AspNetCore.Mvc.Testing;
-
 namespace SaPosts.IntegrationTests;
 
-public sealed partial class LayoutTests(WebApplicationFactory<Program> factory)
-    : IClassFixture<WebApplicationFactory<Program>>
+public sealed partial class LayoutTests(BlogFactory factory)
+    : IClassFixture<BlogFactory>
 {
     [Fact]
     public async Task Font_preload_points_at_the_file_the_stylesheet_uses()

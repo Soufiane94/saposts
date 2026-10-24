@@ -19,6 +19,19 @@ public static class SecurityHeaders
             headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
             headers["Permissions-Policy"] = "camera=(), geolocation=(), microphone=(), payment=(), usb=()";
             headers["Cross-Origin-Opener-Policy"] = "same-origin";
+
+            if (context.Request.Path.StartsWithSegments("/admin", StringComparison.OrdinalIgnoreCase))
+            {
+                // Authenticated pages: never stored by browsers or proxies, never indexed. Applied when the
+                // response starts, after antiforgery has set (and would otherwise warn about) cache headers.
+                headers["X-Robots-Tag"] = "noindex";
+                context.Response.OnStarting(static state =>
+                {
+                    ((HttpResponse)state).Headers.CacheControl = "no-store";
+                    return Task.CompletedTask;
+                }, context.Response);
+            }
+
             return next(context);
         });
 }

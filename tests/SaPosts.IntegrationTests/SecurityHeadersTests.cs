@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace SaPosts.IntegrationTests;
 
-public sealed class SecurityHeadersTests(WebApplicationFactory<Program> factory)
-    : IClassFixture<WebApplicationFactory<Program>>
+public sealed class SecurityHeadersTests(BlogFactory factory)
+    : IClassFixture<BlogFactory>
 {
     [Fact]
     public async Task Pages_send_a_deny_by_default_content_security_policy()

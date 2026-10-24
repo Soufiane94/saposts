@@ -1,0 +1,38 @@
+@using Microsoft.Extensions.Options
+@inject IOptions<SiteOptions> SiteOptionsAccessor
+@{
+    var site = SiteOptionsAccessor.Value;
+    var title = ViewData["Title"] is string pageTitle ? $"{pageTitle} · Administration" : "Administration";
+    var signedIn = User.Identity?.IsAuthenticated == true;
+}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>@title</title>
+    <partial name="_HeadAssets" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+</head>
+<body>
+    <a class="skip-link" href="#contenu">Aller au contenu</a>
+    <header class="admin-header">
+        <div class="admin-frame admin-header__inner">
+            <a class="admin-brand" asp-page="/Admin/Index">@site.Title · Administration</a>
+            <div class="admin-header__actions">
+                <a href="/">Voir le site</a>
+                @if (signedIn)
+                {
+                    <form method="post" asp-page="/Admin/Logout">
+                        <button type="submit" class="link-button">Se déconnecter</button>
+                    </form>
+                }
+            </div>
+        </div>
+    </header>
+    <main id="contenu" class="admin-main" tabindex="-1">
+        @RenderBody()
+    </main>
+</body>
+</html>

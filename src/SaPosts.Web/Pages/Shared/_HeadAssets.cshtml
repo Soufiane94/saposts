@@ -1,0 +1,5 @@
+@* Plain path on purpose: "~/" would be fingerprinted, but tokens.css references the plain file, so the preload would miss. *@
+<link rel="preload" href="/fonts/source-serif-4/source-serif-4-latin.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+<link rel="icon" href="~/favicon.svg" type="image/svg+xml" />
