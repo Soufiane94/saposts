@@ -1,0 +1,96 @@
+/*
+ * Design tokens: the only place where fonts, colours, type sizes and spacing are defined.
+ *
+ * Two layers:
+ *   --palette-*  raw values, referenced only inside this file;
+ *   everything else is a semantic token, and the only kind other stylesheets may use.
+ * Aligning with the portfolio means editing this file; a dark theme later means remapping
+ * the semantic colours in a prefers-color-scheme block, without touching components.
+ */
+
+/* Source Serif 4, variable (weight 200–900, optical size 8–60), SIL Open Font License 1.1.
+   Latin subset: covers French, including œ, « », € and the narrow no-break space. */
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url("../fonts/source-serif-4/source-serif-4-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: italic;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url("../fonts/source-serif-4/source-serif-4-latin-italic.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  color-scheme: light;
+
+  /* Palette. Contrast on paper: ink 15.2:1, slate-600 6.8:1, slate-400 3.6:1, petrol-700 7.5:1. */
+  --palette-paper: #fbfaf7;
+  --palette-paper-sunken: #f2f0eb;
+  --palette-ink: #1c232b;
+  --palette-slate-600: #4f5967;
+  --palette-slate-400: #7d8590;
+  --palette-line: #e2dfd8;
+  --palette-petrol-700: #0f5a6b;
+  --palette-petrol-800: #0b4452;
+
+  /* Colours */
+  --color-surface: var(--palette-paper);
+  --color-surface-sunken: var(--palette-paper-sunken);
+  --color-text: var(--palette-ink);
+  --color-text-muted: var(--palette-slate-600);
+  --color-border: var(--palette-line);                /* decorative rules */
+  --color-border-strong: var(--palette-slate-400);    /* form controls: needs 3:1 */
+  --color-accent: var(--palette-petrol-700);
+  --color-accent-strong: var(--palette-petrol-800);
+  --color-focus: var(--palette-petrol-700);
+
+  /* Font families. Optical sizing is automatic, so headings get the display cut of the same family. */
+  --font-text: "Source Serif 4", "Iowan Old Style", Charter, Georgia, serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* Font sizes: fluid between ~360px and ~1280px viewports, rem-based so browser zoom still works. */
+  --font-size-small: clamp(0.875rem, 0.85rem + 0.1vw, 0.9375rem);
+  --font-size-body: clamp(1.0625rem, 1rem + 0.3vw, 1.1875rem);
+  --font-size-lead: clamp(1.1875rem, 1.1rem + 0.4vw, 1.375rem);
+  --font-size-brand: clamp(1.25rem, 1.15rem + 0.4vw, 1.5rem);
+  --font-size-h3: clamp(1.1875rem, 1.1rem + 0.45vw, 1.375rem);
+  --font-size-h2: clamp(1.375rem, 1.2rem + 0.8vw, 1.75rem);
+  --font-size-h1: clamp(2rem, 1.55rem + 2vw, 3rem);
+
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
+
+  --line-height-body: 1.6;
+  --line-height-snug: 1.35;
+  --line-height-heading: 1.15;
+
+  /* Widths. Prose stays within 65–75 characters; the frame holds header, lists and wide figures. */
+  --width-prose: 68ch;
+  --width-frame: 52rem;
+
+  /* Spacing: 4px-based scale, plus fluid gutters and section rhythm. */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-gutter: clamp(1rem, 0.6rem + 2vw, 2rem);
+  --space-section: clamp(2.5rem, 1.8rem + 3vw, 4.5rem);
+
+  /* Lines and focus */
+  --border-width: 1px;
+  --radius: 2px;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 3px;
+}

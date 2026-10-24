@@ -1,0 +1,50 @@
+@using Microsoft.Extensions.Options
+@inject IOptions<SiteOptions> SiteOptionsAccessor
+@{
+    var site = SiteOptionsAccessor.Value;
+    var title = ViewData["Title"] is string pageTitle ? $"{pageTitle} · {site.Title}" : site.Title;
+    var currentPage = ViewContext.RouteData.Values["page"] as string;
+}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@title</title>
+    @* Plain path on purpose: "~/" would be fingerprinted, but tokens.css references the plain file, so the preload would miss. *@
+    <link rel="preload" href="/fonts/source-serif-4/source-serif-4-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="icon" href="~/favicon.svg" type="image/svg+xml" />
+    @await RenderSectionAsync("Head", required: false)
+</head>
+<body>
+    <a class="skip-link" href="#contenu">Aller au contenu</a>
+    <header class="site-header">
+        <div class="frame site-header__inner">
+            <div class="site-brand">
+                <a class="site-brand__title" asp-page="/Index">@site.Title</a>
+                @if (!string.IsNullOrWhiteSpace(site.Tagline))
+                {
+                    <p class="site-brand__tagline">@site.Tagline</p>
+                }
+            </div>
+            <nav aria-label="Navigation principale">
+                <ul class="site-nav">
+                    <li><a asp-page="/Index" aria-current="@(currentPage == "/Index" ? "page" : null)">Blog</a></li>
+                    <li><a href="/contact">Contact</a></li>
+                    <li><a href="@site.PortfolioUrl">Portfolio</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <main id="contenu" class="site-main" tabindex="-1">
+        @RenderBody()
+    </main>
+    <footer class="site-footer">
+        <div class="frame site-footer__inner">
+            <p>© @DateTime.UtcNow.Year @site.Title</p>
+        </div>
+    </footer>
+</body>
+</html>
