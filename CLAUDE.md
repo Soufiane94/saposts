@@ -9,15 +9,23 @@ The full brief and milestone plan were agreed in the first session; this file ke
 dotnet build                          # warnings are errors
 dotnet test                           # xUnit v3 on Microsoft Testing Platform (see global.json)
 dotnet format --verify-no-changes     # what CI checks; run `dotnet format` to fix
-dotnet run --project src/SaPosts.Web  # http://localhost:5243
-docker compose up --build             # http://localhost:8080
+dotnet run --project src/SaPosts.Web  # http://localhost:5243 (admin from user-secrets)
+docker compose up --build             # http://localhost:8080 (admin from .env)
+dotnet tool restore                   # dotnet-ef, pinned in .config/dotnet-tools.json
+dotnet ef migrations add <Name> --project src/SaPosts.Web --output-dir Data/Migrations
 ```
+
+Migrations are applied at startup. They are marked as generated code in `.editorconfig`, so
+analyzers and `dotnet format` skip them.
 
 ## Layout
 
-- `src/SaPosts.Web`: the only app project; folders by feature (`Pages/`, `Infrastructure/`, …).
+- `src/SaPosts.Web`: the only app project, folders by feature: `Posts/`, `Media/`, `Contact/`
+  (entity + EF configuration each), `Auth/`, `Data/` (DbContext, startup initialization),
+  `Infrastructure/`, `Pages/` (`Pages/Admin/` requires sign-in, except `Login`).
   Interfaces only at real seams (media storage, mail sender, clock), no layered projects.
-- `tests/SaPosts.IntegrationTests`: `WebApplicationFactory<Program>` tests for main flows.
+- `tests/SaPosts.IntegrationTests`: `BlogFactory` gives each instance its own temp data directory.
+  Tests that change shared state (lockout, rate limits) create their own instance.
 - `tests/SaPosts.UnitTests` (from M3): slugs, sanitization, validation. No tests for trivial code.
 
 ## Conventions
@@ -52,8 +60,20 @@ docker compose up --build             # http://localhost:8080
 - **Hosting**: still open. Vercel is not possible (no .NET runtime, ephemeral filesystem).
   The target is a small Linux VM running this compose file behind a TLS proxy (decided at M6).
 - **SQLite** in WAL mode, single instance by design. Backups with `VACUUM INTO`, not file copies.
+  Dates are UTC `DateTime` (EF cannot order or compare `DateTimeOffset` on SQLite); a converter
+  marks values read back as UTC.
 - **Data Protection keys** persist on the data volume (otherwise each redeploy logs out the admin
-  and breaks antiforgery tokens).
+  and breaks antiforgery tokens). They are unencrypted at rest; the volume is as sensitive as the DB.
+  Paths are resolved from options lazily so test hosts can each use their own directory.
+- **Admin account**: Identity core, no Identity UI, no roles (`IdentityUserContext`). Created from
+  `Admin:*` settings on first start; later, settings that are present win (password reset path).
+  Lockout 5 failures / 15 min; login POST rate limit 10 / 15 min per IP. Lockout lets anyone lock
+  the admin out for 15 minutes: accepted for a single-owner blog.
+- **Cookies** `saposts.auth` and `saposts.antiforgery`: HttpOnly, SameSite=Strict, Secure when the
+  request is HTTPS. Behind the TLS proxy this requires forwarded headers (M6), which the per-IP
+  rate limit needs too.
+- **Encoding**: `WebEncoderOptions` allows all Unicode ranges, so French text is not entity-encoded.
+- Validation is server-side only (client validation disabled: no validation scripts).
 - **Markdown** is rendered on save (Markdig → HtmlSanitizer) and stored with a renderer version;
   the editor preview calls the same server pipeline.
 - **Contact messages** are stored first, then sent by a background service (the table is the outbox).

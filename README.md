@@ -8,11 +8,13 @@ one admin, no third-party requests from visitors' browsers.
 Requirements: Docker with Compose v2.
 
 ```sh
-cp .env.example .env      # then edit the values
+cp .env.example .env      # then set at least Admin__Password (12+ characters)
 docker compose up --build
 ```
 
-The site is at <http://localhost:8080> and the health check at <http://localhost:8080/healthz>.
+The site is at <http://localhost:8080>, the admin at <http://localhost:8080/admin> and the health
+check at <http://localhost:8080/healthz>. Without admin settings, the first start stops with a
+message saying which variables to set.
 The database and uploaded media live in the named volumes `saposts_data` and `saposts_media`,
 so they survive `docker compose down` (but not `docker compose down -v`).
 
@@ -21,7 +23,9 @@ so they survive `docker compose down` (but not `docker compose down -v`).
 Requirements: .NET SDK 10.0.
 
 ```sh
-dotnet run --project src/SaPosts.Web   # http://localhost:5243
+dotnet user-secrets set Admin:Email you@example.com --project src/SaPosts.Web
+dotnet user-secrets set Admin:Password "a long passphrase" --project src/SaPosts.Web
+dotnet run --project src/SaPosts.Web   # http://localhost:5243, data in src/SaPosts.Web/App_Data
 dotnet test
 dotnet format --verify-no-changes      # the CI format check
 ```
@@ -37,7 +41,21 @@ Environment variable names use `__` for nesting.
 | `Site__Title` | `Blog` | Site title in header, footer and page titles |
 | `Site__Tagline` | `Notes et articles` | Shown under the title; empty hides it |
 | `Site__PortfolioUrl` | `https://example.com` | Portfolio link in the header |
+| `Admin__Email` | (none) | Admin sign-in email |
+| `Admin__Password` | (none) | Admin password, 12+ characters |
+| `Storage__DataPath` | `App_Data` (`/data` in Docker) | SQLite database and Data Protection keys |
 | `AllowedHosts` | `*` | Set to your domain in production |
+
+## Admin account
+
+There is exactly one account, and no registration page. It is created on first start from
+`Admin__Email` and `Admin__Password`. On later starts, any of these values that is set replaces
+the stored one, so to change or reset the password, edit `.env` and run `docker compose up -d`.
+This also lifts a lockout. Once the account exists, you may remove the password from `.env`.
+
+- Five failed sign-ins lock the account for 15 minutes.
+- Sign-in attempts are limited to 10 per 15 minutes per IP address.
+- Sessions last 12 hours, renewed while you use the admin.
 
 ## Deploy
 
