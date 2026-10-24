@@ -18,6 +18,7 @@ WORKDIR /app
 
 # Mount points for the named volumes. Created here so the volumes inherit the non-root owner.
 RUN mkdir -p /data /media && chown "$APP_UID:$APP_UID" /data /media
+ENV Storage__DataPath=/data
 
 COPY --from=build /app .
 
